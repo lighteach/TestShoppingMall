@@ -1,0 +1,125 @@
+﻿@{
+    ViewData["Title"] = "Index";
+}
+@section Css {
+    <link rel="stylesheet" type="text/css" href="/plugins/OwlCarousel2-2.2.1/owl.carousel.css">
+    <link rel="stylesheet" type="text/css" href="/plugins/OwlCarousel2-2.2.1/owl.theme.default.css">
+    <link rel="stylesheet" type="text/css" href="/plugins/OwlCarousel2-2.2.1/animate.css">
+    <link rel="stylesheet" type="text/css" href="/styles/main_styles.css">
+    <link rel="stylesheet" type="text/css" href="/styles/responsive.css">
+}
+<!-- Products -->
+
+<div class="products">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-6 offset-lg-3">
+                <div class="section_title text-center">Popular on Little Closet</div>
+            </div>
+        </div>
+        <div class="row products_row">
+        </div>
+        <div class="row page_nav_row">
+            <div class="col">
+                <div class="page_nav" id="paging">
+                    @*<ul class="d-flex flex-row align-items-start justify-content-center">
+                        <li class="active"><a href="#">01</a></li>
+                        <li><a href="#">02</a></li>
+                        <li><a href="#">03</a></li>
+                        <li><a href="#">04</a></li>
+                    </ul>*@
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/pagination.js"></script>
+    <script>
+        var defPageSize = 6;
+        var category = "@ViewData["category"]";
+
+        function template(data, currentNo) {
+            var html = '<ul class="d-flex flex-row align-items-start justify-content-center">';
+            $.each(data, function (index, item) {
+                html += '<li' + (item == currentNo ? ' class="active"' : '')
+                    + '><a href="javascript:void(0);" onclick="setProductList(' + String(item) + ', ' + String(defPageSize) + ', \'' + category + '\');">' + item + '</a></li>';
+            });
+            html += '</ul>';
+            return html;
+        }
+
+        function setProductList(_pageNo, _pageSize, _category) {
+            $.post("/Product/GetProductList", { pageNo: _pageNo, pageSize: _pageSize, category: _category }, function (prdData) {
+                if (prdData != null) {
+                    $(".products_row").empty();
+                    $.each(prdData.productList, function (idx, item) {
+                        var row = "<a href=\"Product/Detail/{PrdIdx}\">"
+                            + "<div class=\"col-xl-4 col-md-6\">"
+                            + "<div class=\"product\">"
+                            + "    <div class=\"product_image\"><img src=\"/images/{IMAGE}\" alt=\"\"></div>"
+                            + "    <div class=\"product_content\">"
+                            + "    <div class=\"product_info d-flex flex-row align-items-start justify-content-start\">"
+                            + "        <div>"
+                            + "        <div>"
+                            + "            <div class=\"product_name\"><a href=\"product.html\">{Name}</a></div>"
+                            + "            <div class=\"product_category\">In <a href=\"#\">{Category}</a></div>"
+                            + "        </div>"
+                            + "        </div>"
+                            + "        <div class=\"ml-auto text-right\">"
+                            + "        <div class=\"rating_r rating_r_4 home_item_rating\"><i></i><i></i><i></i><i></i><i></i></div>"
+                            + "        <div class=\"product_price text-right\">{Price}</div>"
+                            + "        </div>"
+                            + "    </div>"
+                            + "    <div class=\"product_buttons\">"
+                            + "        <div class=\"text-right d-flex flex-row align-items-start justify-content-start\">"
+                            + "        <div class=\"product_button product_fav text-center d-flex flex-column align-items-center justify-content-center\">"
+                            + "            <div><div><img src=\"images/heart_2.svg\" class=\"svg\" alt=\"\"><div>+</div></div></div>"
+                            + "        </div>"
+                            + "        <div class=\"product_button product_cart text-center d-flex flex-column align-items-center justify-content-center\">"
+                            + "            <div><div><img src=\"images/cart.svg\" class=\"svg\" alt=\"\"><div>+</div></div></div>"
+                            + "        </div>"
+                            + "        </div>"
+                            + "    </div>"
+                            + "    </div>"
+                            + "</div>"
+                            + "</div>"
+                            + "</a>";
+                        row = row.replace("{PrdIdx}", String(item.idx));
+                        row = row.replace("{IMAGE}", item.imageUrl);
+                        row = row.replace("{Name}", item.name);
+                        row = row.replace("{Category}", item.category);
+                        var price = "$" + String(item.price);
+                        if (String(item.price).indexOf(".") != -1) {
+                            price = "$" + String(item.price).split(".")[0] + "<span>." + String(item.price).split(".")[1] + "</span>";
+                        }
+                        row = row.replace("{Price}", price);
+
+                        $(".products_row").append(row);
+
+                        var pagingSrc = Array.from(Array(prdData.pagingInfo.allCnt).keys(), a => a + 1);
+                        var pagingPageSize = Math.ceil(prdData.pagingInfo.allCnt / defPageSize);
+                        $("#paging").empty();
+                        $("#paging").pagination({
+                            dataSource: pagingSrc,
+                            pageSize: pagingPageSize,
+                            autoHidePrevious: true,
+                            autoHideNext: true,
+                            callback: function (data, pagination) {
+                                // template method of yourself
+                                var html = template(data, prdData.pagingInfo.currentPageNo);
+                                $("#paging").html(html);
+                            }
+                        })
+
+                    });
+                }
+            });
+        }
+
+        $(document).ready(function () {
+            setProductList(1, 6, category);
+        });
+    </script>
+}
